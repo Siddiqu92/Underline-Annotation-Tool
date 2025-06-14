@@ -1,0 +1,39 @@
+.paragraph-container {
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #eee;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.paragraph-text {
+  line-height: 1.6;
+  font-size: 16px;
+  color: #333;
+  white-space: pre-wrap;
+}
+
+.underline {
+  position: relative;
+  display: inline;
+  cursor: pointer;
+}
+
+.underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 2px;
+  background-color: #3498db;
+}
+
+.underline.selected::after {
+  background-color: #e74c3c;
+  height: 3px;
+}
+
+.underline.selected {
+  background-color: rgba(231, 76, 60, 0.1);
+}

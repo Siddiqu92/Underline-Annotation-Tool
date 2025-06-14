@@ -1,0 +1,56 @@
+.underline-tool-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.tool-controls {
+  margin: 20px 0;
+  display: flex;
+  gap: 10px;
+}
+
+.remove-button, .submit-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.remove-button {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.remove-button:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+.submit-button {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.submit-button:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+.debug-info {
+  margin-top: 30px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.debug-info pre {
+  background-color: #333;
+  color: #f8f8f8;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
