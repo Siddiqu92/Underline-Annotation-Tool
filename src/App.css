@@ -1,4 +1,42 @@
+/* App.css */
 .App {
-  text-align: center;
+  text-align: left;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+/* Add this CSS for proper line spacing */
+.UnderlineTool-container {
+  line-height: 2.2; /* Increased line height for better spacing */
+  white-space: pre-wrap; /* Preserves whitespace and line breaks */
+  font-size: 16px;
+}
+
+/* Style for the text area where underlines will appear */
+.UnderlineTool-text {
+  position: relative;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+/* Style for individual underline elements */
+.underline {
+  position: absolute;
+  height: 2px;
+  background-color: #ff5722; /* Orange color for underlines */
+  bottom: -2px;
+}
+
+/* Additional spacing between paragraphs if needed */
+.paragraph-spacing {
+  margin-bottom: 1.5em;
+}
+
+/* Optional: Extra space after every second line */
+.line-spacing {
+  margin-bottom: 1em;
 }

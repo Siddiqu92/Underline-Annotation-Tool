@@ -5,65 +5,88 @@ import './ParagraphRenderer.css';
 interface ParagraphRendererProps {
   text: string;
   underlines: Underline[];
-  selectedUnderlineId: string | null;
-  onUnderlineClick: (id: string) => void;
+  selectedUnderlineId?: string | null;
+  onUnderlineClick?: (id: string) => void;
 }
+
+const getUnderlineIdsForIndex = (underlines: Underline[], index: number) => {
+  return underlines
+    .filter(ul => index >= ul.startIndex && index < ul.endIndex)
+    .map(ul => ul.id);
+};
 
 const ParagraphRenderer: React.FC<ParagraphRendererProps> = ({
   text,
   underlines,
   selectedUnderlineId,
-  onUnderlineClick
+  onUnderlineClick,
 }) => {
-  // Sort underlines by start index to render them in order
-  const sortedUnderlines = [...underlines].sort((a, b) => a.startIndex - b.startIndex);
+  // Build an array of underline ID sets for each character
+  const underlineMap: string[][] = [];
+  for (let i = 0; i < text.length; i++) {
+    underlineMap[i] = getUnderlineIdsForIndex(underlines, i);
+  }
 
-  // Create an array of text segments with underlines
-  const segments: React.ReactNode[] = [];
-  let lastIndex = 0;
-
-  sortedUnderlines.forEach((underline) => {
-    // Add text before the underline
-    if (underline.startIndex > lastIndex) {
-      segments.push(
-        <span key={`text-${lastIndex}-${underline.startIndex}`}>
-          {text.slice(lastIndex, underline.startIndex)}
-        </span>
-      );
+  // Group text by contiguous underline ID sets
+  const segments: {
+    start: number;
+    end: number;
+    underlineIds: string[];
+  }[] = [];
+  let segStart = 0;
+  for (let i = 1; i <= text.length; i++) {
+    const prev = underlineMap[i - 1] || [];
+    const curr = underlineMap[i] || [];
+    if (JSON.stringify(prev) !== JSON.stringify(curr) || i === text.length) {
+      segments.push({
+        start: segStart,
+        end: i,
+        underlineIds: prev,
+      });
+      segStart = i;
     }
-
-    // Add the underlined text
-    const isSelected = underline.id === selectedUnderlineId;
-    const underlineClass = isSelected ? 'underline selected' : 'underline';
-    
-    segments.push(
-      <span
-        key={`underline-${underline.id}`}
-        className={underlineClass}
-        onClick={(e) => {
-          e.stopPropagation();
-          onUnderlineClick(underline.id);
-        }}
-      >
-        {text.slice(underline.startIndex, underline.endIndex)}
-      </span>
-    );
-
-    lastIndex = underline.endIndex;
-  });
-
-  // Add remaining text after the last underline
-  if (lastIndex < text.length) {
-    segments.push(
-      <span key={`text-${lastIndex}-${text.length}`}>
-        {text.slice(lastIndex)}
-      </span>
-    );
   }
 
   return (
-    <div className="paragraph-container">
-      <p className="paragraph-text">{segments}</p>
+    <div className="paragraph-text">
+      {segments.map((seg, idx) => {
+        const segText = text.slice(seg.start, seg.end);
+        if (seg.underlineIds.length === 0) {
+          return <span key={idx}>{segText}</span>;
+        }
+        
+        const isSelected = selectedUnderlineId && seg.underlineIds.includes(selectedUnderlineId);
+        const underlineCount = seg.underlineIds.length;
+        const selectedIndex = isSelected ? seg.underlineIds.indexOf(selectedUnderlineId!) : -1;
+
+        return (
+          <span
+            key={idx}
+            className={`underline-span underline-count-${underlineCount}${isSelected ? ' selected' : ''}`}
+            data-selected-index={selectedIndex}
+            onClick={e => {
+              e.stopPropagation();
+              if (onUnderlineClick) {
+                onUnderlineClick(seg.underlineIds[seg.underlineIds.length - 1]);
+              }
+            }}
+            style={{
+              '--underline-count': underlineCount,
+              '--selected-index': selectedIndex,
+            } as React.CSSProperties}
+          >
+            {segText}
+            {/* Render multiple underline elements */}
+            {Array.from({ length: underlineCount }).map((_, i) => (
+              <span 
+                key={i}
+                className={`underline-line ${i === selectedIndex ? 'selected-line' : ''}`}
+                style={{ bottom: `${i * 3}px` }}
+              />
+            ))}
+          </span>
+        );
+      })}
     </div>
   );
 };
