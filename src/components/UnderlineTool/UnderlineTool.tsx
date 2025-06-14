@@ -130,18 +130,27 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
     }
   }, [onSubmit, textWithUnderlines.underlines]);
 
-  // Get the selected underline text
-  const selectedUnderlineText = selectedUnderlineId 
-    ? textWithUnderlines.text.slice(
-        textWithUnderlines.underlines.find(ul => ul.id === selectedUnderlineId)?.startIndex || 0,
-        textWithUnderlines.underlines.find(ul => ul.id === selectedUnderlineId)?.endIndex || 0
-      )
+  // Get the selected underline text and details
+  const selectedUnderline = selectedUnderlineId 
+    ? textWithUnderlines.underlines.find(ul => ul.id === selectedUnderlineId)
+    : null;
+  const selectedUnderlineText = selectedUnderline
+    ? textWithUnderlines.text.slice(selectedUnderline.startIndex, selectedUnderline.endIndex)
     : '';
 
   // Get the current selection text (before making it an underline)
   const currentSelectionText = currentSelection
     ? textWithUnderlines.text.slice(currentSelection.start, currentSelection.end)
     : '';
+
+  // Enhanced debug information
+  const debugUnderlines = textWithUnderlines.underlines.map(ul => ({
+    id: ul.id,
+    startIndex: ul.startIndex,
+    endIndex: ul.endIndex,
+    text: textWithUnderlines.text.slice(ul.startIndex, ul.endIndex),
+    isSelected: ul.id === selectedUnderlineId
+  }));
 
   return (
     <div className="underline-tool-container">
@@ -165,10 +174,16 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
         <div className="selection-text">
           {currentSelectionText || 'No text currently selected'}
         </div>
+        <div className="selection-info">
+          {currentSelection && `(Indices: ${currentSelection.start}-${currentSelection.end})`}
+        </div>
         
         <h3>Selected Underline:</h3>
         <div className="selection-text">
           {selectedUnderlineText || 'No underline selected'}
+        </div>
+        <div className="selection-info">
+          {selectedUnderline && `(ID: ${selectedUnderline.id}, Indices: ${selectedUnderline.startIndex}-${selectedUnderline.endIndex})`}
         </div>
       </div>
 
@@ -200,8 +215,18 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
 
       <div className="debug-info">
         <h3>Debug Information</h3>
-        <p>Selected Underline ID: {selectedUnderlineId || 'None'}</p>
-        <p>Underline Count: {textWithUnderlines.underlines.length}</p>
+        <div className="debug-section">
+          <h4>Sentence Boundaries:</h4>
+          <pre>
+            {JSON.stringify(sentenceBoundaries, null, 2)}
+          </pre>
+        </div>
+        <div className="debug-section">
+          <h4>All Underlines ({textWithUnderlines.underlines.length}):</h4>
+          <pre>
+            {JSON.stringify(debugUnderlines, null, 2)}
+          </pre>
+        </div>
       </div>
     </div>
   );
