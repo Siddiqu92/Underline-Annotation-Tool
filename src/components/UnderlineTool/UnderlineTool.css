@@ -5,52 +5,66 @@
   font-family: Arial, sans-serif;
 }
 
-.tool-controls {
+.selection-display {
   margin: 20px 0;
-  display: flex;
-  gap: 10px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
 }
 
-.remove-button, .submit-button {
-  padding: 8px 16px;
+.selection-display h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.selection-text {
+  padding: 10px;
+  background-color: white;
+  border: 1px solid #ddd;
+  min-height: 20px;
+  margin-bottom: 15px;
+  border-radius: 3px;
+}
+
+.tool-controls {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.tool-controls button {
+  padding: 8px 15px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-weight: bold;
+}
+
+.tool-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.major-button {
+  background-color: #4CAF50;
+  color: white;
 }
 
 .remove-button {
-  background-color: #e74c3c;
+  background-color: #f44336;
   color: white;
-}
-
-.remove-button:disabled {
-  background-color: #e0e0e0;
-  cursor: not-allowed;
 }
 
 .submit-button {
-  background-color: #2ecc71;
+  background-color: #2196F3;
   color: white;
-}
-
-.submit-button:disabled {
-  background-color: #e0e0e0;
-  cursor: not-allowed;
 }
 
 .debug-info {
   margin-top: 30px;
   padding: 15px;
-  background-color: #f5f5f5;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 14px;
-}
-
-.debug-info pre {
-  background-color: #333;
-  color: #f8f8f8;
-  padding: 10px;
-  border-radius: 4px;
-  overflow-x: auto;
 }

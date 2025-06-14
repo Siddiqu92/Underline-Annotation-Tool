@@ -12,6 +12,7 @@ interface ParagraphRendererProps {
 const getUnderlineIdsForIndex = (underlines: Underline[], index: number) => {
   return underlines
     .filter(ul => index >= ul.startIndex && index < ul.endIndex)
+    .sort((a, b) => (a.endIndex - a.startIndex) - (b.endIndex - b.startIndex)) // Sort by length (shortest first)
     .map(ul => ul.id);
 };
 
@@ -21,7 +22,7 @@ const ParagraphRenderer: React.FC<ParagraphRendererProps> = ({
   selectedUnderlineId,
   onUnderlineClick,
 }) => {
-  // Build an array of underline ID sets for each character
+  // Build an array of underline ID sets for each character (sorted by length)
   const underlineMap: string[][] = [];
   for (let i = 0; i < text.length; i++) {
     underlineMap[i] = getUnderlineIdsForIndex(underlines, i);
@@ -66,8 +67,9 @@ const ParagraphRenderer: React.FC<ParagraphRendererProps> = ({
             data-selected-index={selectedIndex}
             onClick={e => {
               e.stopPropagation();
-              if (onUnderlineClick) {
-                onUnderlineClick(seg.underlineIds[seg.underlineIds.length - 1]);
+              if (onUnderlineClick && seg.underlineIds.length > 0) {
+                // Select the smallest (most specific) underline at this position
+                onUnderlineClick(seg.underlineIds[0]);
               }
             }}
             style={{

@@ -27,6 +27,7 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
   });
   const [selectedUnderlineId, setSelectedUnderlineId] = useState<string | null>(null);
   const [sentenceBoundaries, setSentenceBoundaries] = useState<SentenceBoundary[]>([]);
+  const [currentSelection, setCurrentSelection] = useState<{start: number, end: number} | null>(null);
   const paragraphRef = useRef<HTMLDivElement>(null);
 
   // Calculate sentence boundaries when text changes
@@ -53,6 +54,7 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
     // Skip empty or whitespace-only selections
     if (startIndex >= endIndex || !textWithUnderlines.text.slice(startIndex, endIndex).trim()) {
       selection.removeAllRanges();
+      setCurrentSelection(null);
       return;
     }
 
@@ -66,6 +68,7 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
     // Validate the expanded selection
     if (wordStart >= wordEnd) {
       selection.removeAllRanges();
+      setCurrentSelection(null);
       return;
     }
 
@@ -73,19 +76,29 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
     if (!isWithinSingleSentence(textWithUnderlines.text, wordStart, wordEnd, sentenceBoundaries)) {
       alert('Please select text within a single sentence.');
       selection.removeAllRanges();
+      setCurrentSelection(null);
       return;
     }
 
+    setCurrentSelection({start: wordStart, end: wordEnd});
+    selection.removeAllRanges();
+  }, [textWithUnderlines.text, sentenceBoundaries]);
+
+  const handleAddUnderline = useCallback(() => {
+    if (!currentSelection) return;
+
+    const {start, end} = currentSelection;
+
     // Check for existing identical underlines
     const isDuplicate = textWithUnderlines.underlines.some(
-      ul => ul.startIndex === wordStart && ul.endIndex === wordEnd
+      ul => ul.startIndex === start && ul.endIndex === end
     );
 
     if (!isDuplicate) {
       const newUnderline: Underline = {
         id: uuidv4(),
-        startIndex: wordStart,
-        endIndex: wordEnd
+        startIndex: start,
+        endIndex: end
       };
 
       setTextWithUnderlines(prev => ({
@@ -94,8 +107,8 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
       }));
     }
 
-    selection.removeAllRanges();
-  }, [textWithUnderlines.text, textWithUnderlines.underlines, sentenceBoundaries]);
+    setCurrentSelection(null);
+  }, [currentSelection, textWithUnderlines.underlines]);
 
   const handleUnderlineClick = useCallback((id: string) => {
     setSelectedUnderlineId(prev => prev === id ? null : id);
@@ -117,11 +130,18 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
     }
   }, [onSubmit, textWithUnderlines.underlines]);
 
-  // Enhanced debug information with actual text content
-  const debugUnderlines = textWithUnderlines.underlines.map(ul => ({
-    ...ul,
-    text: textWithUnderlines.text.slice(ul.startIndex, ul.endIndex)
-  }));
+  // Get the selected underline text
+  const selectedUnderlineText = selectedUnderlineId 
+    ? textWithUnderlines.text.slice(
+        textWithUnderlines.underlines.find(ul => ul.id === selectedUnderlineId)?.startIndex || 0,
+        textWithUnderlines.underlines.find(ul => ul.id === selectedUnderlineId)?.endIndex || 0
+      )
+    : '';
+
+  // Get the current selection text (before making it an underline)
+  const currentSelectionText = currentSelection
+    ? textWithUnderlines.text.slice(currentSelection.start, currentSelection.end)
+    : '';
 
   return (
     <div className="underline-tool-container">
@@ -140,7 +160,27 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
         />
       </div>
 
+      <div className="selection-display">
+        <h3>Current Selection:</h3>
+        <div className="selection-text">
+          {currentSelectionText || 'No text currently selected'}
+        </div>
+        
+        <h3>Selected Underline:</h3>
+        <div className="selection-text">
+          {selectedUnderlineText || 'No underline selected'}
+        </div>
+      </div>
+
       <div className="tool-controls">
+        <button
+          onClick={handleAddUnderline}
+          disabled={!currentSelection}
+          className="major-button"
+        >
+          Major (Add Underline)
+        </button>
+
         <button
           onClick={handleRemoveUnderline}
           disabled={!selectedUnderlineId}
@@ -162,9 +202,6 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
         <h3>Debug Information</h3>
         <p>Selected Underline ID: {selectedUnderlineId || 'None'}</p>
         <p>Underline Count: {textWithUnderlines.underlines.length}</p>
-        <pre>
-          {JSON.stringify(debugUnderlines, null, 2)}
-        </pre>
       </div>
     </div>
   );
