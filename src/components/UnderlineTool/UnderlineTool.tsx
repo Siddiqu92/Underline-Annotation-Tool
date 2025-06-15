@@ -10,6 +10,9 @@ import {
 import ParagraphRenderer from '../ParagraphRenderer';
 import './UnderlineTool.css';
 
+// Local storage key for saving underlines
+const UNDERLINES_STORAGE_KEY = 'underlineAnnotations';
+
 interface UnderlineToolProps {
   initialText: string;
   initialUnderlines?: Underline[];
@@ -21,13 +24,28 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
   initialUnderlines = [],
   onSubmit
 }) => {
+  // Load saved underlines from localStorage if they exist
+  const loadSavedUnderlines = (): Underline[] => {
+    try {
+      const savedData = localStorage.getItem(UNDERLINES_STORAGE_KEY);
+      if (savedData) {
+        return JSON.parse(savedData);
+      }
+    } catch (error) {
+      console.error('Failed to load saved underlines:', error);
+    }
+    return initialUnderlines;
+  };
+
   const [textWithUnderlines, setTextWithUnderlines] = useState<TextWithUnderlines>({
     text: initialText,
-    underlines: initialUnderlines
+    underlines: loadSavedUnderlines()
   });
   const [selectedUnderlineId, setSelectedUnderlineId] = useState<string | null>(null);
   const [sentenceBoundaries, setSentenceBoundaries] = useState<SentenceBoundary[]>([]);
   const [currentSelection, setCurrentSelection] = useState<{start: number, end: number} | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<{success: boolean, message: string} | null>(null);
   const paragraphRef = useRef<HTMLDivElement>(null);
 
   // Calculate sentence boundaries when text changes
@@ -35,6 +53,15 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
     const boundaries = getSentenceBoundaries(textWithUnderlines.text);
     setSentenceBoundaries(boundaries);
   }, [textWithUnderlines.text]);
+
+  // Save underlines to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(UNDERLINES_STORAGE_KEY, JSON.stringify(textWithUnderlines.underlines));
+    } catch (error) {
+      console.error('Failed to save underlines:', error);
+    }
+  }, [textWithUnderlines.underlines]);
 
   const handleTextSelection = useCallback(() => {
     const selection = window.getSelection();
@@ -124,13 +151,48 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
     setSelectedUnderlineId(null);
   }, [selectedUnderlineId]);
 
-  const handleSubmit = useCallback(() => {
-    if (onSubmit) {
-      onSubmit(textWithUnderlines.underlines);
+  const handleSubmit = useCallback(async () => {
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      // If an onSubmit prop is provided, use that (for API calls)
+      if (onSubmit) {
+        await onSubmit(textWithUnderlines.underlines);
+      }
+
+      // For localStorage, we're already saving automatically in the useEffect
+      setSubmitStatus({
+        success: true,
+        message: 'Underlines saved successfully! They will persist after refresh.'
+      });
+    } catch (error) {
+      console.error('Submit failed:', error);
+      setSubmitStatus({
+        success: false,
+        message: 'Failed to save underlines. Please try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+      
+      // Clear the status message after 3 seconds
+      setTimeout(() => {
+        setSubmitStatus(null);
+      }, 3000);
     }
   }, [onSubmit, textWithUnderlines.underlines]);
 
-  // Get the selected underline text and details
+  // Clear all underlines
+  const handleClearAll = useCallback(() => {
+    if (window.confirm('Are you sure you want to clear all underlines?')) {
+      setTextWithUnderlines(prev => ({
+        ...prev,
+        underlines: []
+      }));
+      setSelectedUnderlineId(null);
+    }
+  }, []);
+
   const selectedUnderline = selectedUnderlineId 
     ? textWithUnderlines.underlines.find(ul => ul.id === selectedUnderlineId)
     : null;
@@ -138,12 +200,10 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
     ? textWithUnderlines.text.slice(selectedUnderline.startIndex, selectedUnderline.endIndex)
     : '';
 
-  // Get the current selection text (before making it an underline)
   const currentSelectionText = currentSelection
     ? textWithUnderlines.text.slice(currentSelection.start, currentSelection.end)
     : '';
 
-  // Enhanced debug information
   const debugUnderlines = textWithUnderlines.underlines.map(ul => ({
     id: ul.id,
     startIndex: ul.startIndex,
@@ -155,6 +215,12 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
   return (
     <div className="underline-tool-container">
       <h2>Underline Annotation Tool</h2>
+      
+      {submitStatus && (
+        <div className={`submit-status ${submitStatus.success ? 'success' : 'error'}`}>
+          {submitStatus.message}
+        </div>
+      )}
       
       <div 
         ref={paragraphRef}
@@ -193,7 +259,7 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
           disabled={!currentSelection}
           className="major-button"
         >
-          Major (Add Underline)
+          Add Underline
         </button>
 
         <button
@@ -205,11 +271,19 @@ const UnderlineTool: React.FC<UnderlineToolProps> = ({
         </button>
 
         <button
-          onClick={handleSubmit}
+          onClick={handleClearAll}
           disabled={textWithUnderlines.underlines.length === 0}
+          className="clear-button"
+        >
+          Clear All Underlines
+        </button>
+
+        <button
+          onClick={handleSubmit}
+          disabled={textWithUnderlines.underlines.length === 0 || isSubmitting}
           className="submit-button"
         >
-          Submit Underlines
+          {isSubmitting ? 'Saving...' : 'Save Underlines'}
         </button>
       </div>
 
